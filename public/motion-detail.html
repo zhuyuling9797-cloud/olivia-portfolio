@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>复杂项目详情 | Olivia</title>
+  <meta name="description" content="Olivia 作品集中的复杂项目详情页，按文字在上、图片在下的形式展示。">
+  <style>
+    :root {
+      --bg: #000000;
+      --text: #f5f2ea;
+      --muted: rgba(245, 242, 234, 0.76);
+      --dim: rgba(245, 242, 234, 0.52);
+      --line: rgba(255, 255, 255, 0.12);
+      --panel: rgba(255, 255, 255, 0.04);
+      --shadow: 0 36px 110px rgba(0, 0, 0, 0.5);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .shell {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .topbar-kicker {
+      margin: 0;
+      color: var(--dim);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    .detail {
+      display: grid;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .detail-copy {
+      padding: 0;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
+      max-width: 12ch;
+    }
+
+    .hero-copy {
+      max-width: 820px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.96rem, 1.45vw, 1.04rem);
+      line-height: 1.75;
+    }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .fact-card {
+      padding: 15px 16px 17px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--panel);
+    }
+
+    .fact-card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: 0.76rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .fact-card span {
+      color: var(--muted);
+      line-height: 1.56;
+      font-size: 0.94rem;
+    }
+
+    .visual-card {
+      width: 100%;
+      margin: 0;
+      overflow: hidden;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .visual-card img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    @media (max-width: 820px) {
+      .back-link {
+        top: 16px;
+        left: 16px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .facts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-title {
+        max-width: none;
+        font-size: clamp(1.7rem, 7vw, 2.6rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="back-link" href="index.html#motion">← 返回复杂项目</a>
+      <p class="topbar-kicker">Complex Project Detail</p>
+    </header>
+
+    <section class="detail" aria-label="复杂项目详情">
+      <article class="detail-copy" aria-labelledby="detailTitle">
+        <div class="hero-meta">
+          <span class="pill" id="detailBadge">Complex Project</span>
+          <span class="pill" id="detailIndex">01</span>
+        </div>
+        <h1 class="hero-title" id="detailTitle">项目标题</h1>
+        <p class="hero-copy" id="detailText">项目说明会显示在这里。</p>
+        <div class="facts-grid" id="detailFacts"></div>
+      </article>
+
+      <figure class="visual-card" aria-label="项目视觉图">
+        <img id="detailImage" src="" alt="" loading="eager" />
+      </figure>
+    </section>
+  </main>
+
+  <script>
+    const motionItems = [
+      {
+        title: "CWTC代言人活动（SSS项目）",
+        badge: "Visual Lead",
+        imageSrc: "assets/motion-detail/01-2031.png",
+        text: "角色：视觉负责人",
+        facts: [
+          "定义整体视觉方向",
+          "多端视觉规范",
+          "用 AI Agent 重新定义交易方式",
+          "全球多语言适配",
+          "统一活动视觉体系",
+          "提升品牌辨识度",
+          "支撑全球营销传播"
+        ]
+      },
+      {
+        title: "TOKEN2049",
+        badge: "Offline Experience",
+        imageSrc: "assets/motion-detail/02-2032.png",
+        text: "负责：展位视觉 / KV设计 / 导视系统 / 礼品包装 / 社媒传播",
+        facts: [
+          "展位视觉",
+          "KV设计",
+          "导视系统",
+          "礼品包装",
+          "社媒传播",
+          "保证线上线下品牌一致性"
+        ]
+      },
+      {
+        title: "World Cup Campaign",
+        badge: "Growth Campaign",
+        imageSrc: "assets/motion-detail/03-2033.png",
+        text: "负责：主KV / Banner系统 / APP活动 / 社媒 / H5",
+        facts: [
+          "主KV",
+          "Banner系统",
+          "APP活动",
+          "社媒",
+          "H5",
+          "从视觉策略到全球多渠道统一输出"
+        ]
+      },
+      {
+        title: "圣诞交易大赛",
+        badge: "AI Design",
+        imageSrc: "assets/motion-detail/04-2034.png",
+        text: "负责：AI Agent 视觉概念 / 交易方式表达 / 传播延展",
+        facts: [
+          "AI Agent 交易方式表达",
+          "视觉概念定义",
+          "传播延展",
+          "提升品牌新鲜度"
+        ]
+      }
+    ];
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedIndex = Number.parseInt(params.get("project") || "0", 10);
+    const selectedIndex = Number.isFinite(requestedIndex) ? Math.min(Math.max(requestedIndex, 0), motionItems.length - 1) : 0;
+    const project = motionItems[selectedIndex] || motionItems[0];
+
+    document.title = `${project.title} | 复杂项目详情`;
+
+    const detailBadge = document.getElementById("detailBadge");
+    const detailIndex = document.getElementById("detailIndex");
+    const detailTitle = document.getElementById("detailTitle");
+    const detailText = document.getElementById("detailText");
+    const detailFacts = document.getElementById("detailFacts");
+    const detailImage = document.getElementById("detailImage");
+
+    detailBadge.textContent = project.badge;
+    detailIndex.textContent = String(selectedIndex + 1).padStart(2, "0");
+    detailTitle.textContent = project.title;
+    detailText.textContent = project.text;
+    detailImage.src = project.imageSrc;
+    detailImage.alt = project.title;
+
+    detailFacts.innerHTML = project.facts.map((value) => `
+      <div class="fact-card">
+        <strong>项目要点</strong>
+        <span>${value}</span>
+      </div>
+    `).join("");
+  </script>
+</body>
+</html>
