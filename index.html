@@ -1139,7 +1139,7 @@
       border-radius: 36px;
       overflow: hidden;
       border: 0;
-      background: #050607 url("assets/hero-poster.png") center / cover no-repeat;
+      background: #050607;
       box-shadow: var(--shadow);
       isolation: isolate;
       --mx: 50%;
@@ -1222,24 +1222,43 @@
       box-shadow: 0 32px 110px rgba(0, 0, 0, 0.52);
     }
 
+    .hero-poster,
     .hero-video {
       position: absolute;
       inset: 0;
       z-index: 1;
       width: 100%;
       height: 100%;
-      background: #000 url("assets/hero-poster.png") center / cover no-repeat;
-      object-fit: cover;
-      object-position: center;
-      filter: saturate(0.88) contrast(1.02) blur(8px);
-      mix-blend-mode: screen;
-      transform: scale(1.16);
-      transition: transform 1800ms cubic-bezier(0.22, 1, 0.36, 1), filter 1800ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    body.is-ready .hero-video {
-      filter: saturate(0.98) contrast(1.02) blur(0);
+    .hero-poster {
+      background: #000 url("assets/hero-poster.png") center / cover no-repeat;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: none;
+    }
+
+    .hero-video {
+      background: #000;
+      object-fit: cover;
+      object-position: center;
+      filter: saturate(0.98) contrast(1.02);
       transform: scale(1.03);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: none;
+    }
+
+    .hero-stage.is-video-ready .hero-video {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .hero-stage.is-video-ready .hero-poster {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .hero-video-overlay {
@@ -3342,6 +3361,7 @@
       <div class="hero-stage">
         <div class="hero-opening-shutter hero-opening-shutter--top" aria-hidden="true"></div>
         <div class="hero-opening-shutter hero-opening-shutter--bottom" aria-hidden="true"></div>
+        <div class="hero-poster" aria-hidden="true"></div>
         <video class="hero-video" autoplay muted playsinline loop preload="metadata" poster="assets/hero-poster.png" data-video-src="assets/hero.mp4">
         </video>
         <canvas class="hero-particles" aria-hidden="true"></canvas>
@@ -4552,9 +4572,62 @@
       }, 500);
     }
 
+    let heroVideoInitialized = false;
+
+    function initializeHeroVideo(video) {
+      if (!video || heroVideoInitialized) return;
+      heroVideoInitialized = true;
+
+      const stage = video.closest(".hero-stage");
+      const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const lowPerformanceDevice =
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+        (navigator.deviceMemory && navigator.deviceMemory <= 4);
+
+      if (prefersReducedMotion || lowPerformanceDevice) return;
+
+      const source = video.dataset.videoSrc;
+      if (!source) return;
+
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+
+      let playAttempted = false;
+      const keepPosterVisible = () => {
+        stage?.classList.remove("is-video-ready");
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      };
+
+      const playOnce = () => {
+        if (playAttempted) return;
+        playAttempted = true;
+        const playAttempt = video.play();
+
+        if (playAttempt && typeof playAttempt.then === "function") {
+          playAttempt
+            .then(() => stage?.classList.add("is-video-ready"))
+            .catch(keepPosterVisible);
+        } else if (!video.paused) {
+          stage?.classList.add("is-video-ready");
+        } else {
+          keepPosterVisible();
+        }
+      };
+
+      video.addEventListener("canplay", playOnce, { once: true });
+      video.addEventListener("error", keepPosterVisible, { once: true });
+      video.src = source;
+      video.load();
+    }
+
     function initializeHomepageVideos() {
       const heroVideo = document.querySelector(".hero-video");
-      if (heroVideo) loadAndPlayVideo(heroVideo);
+      initializeHeroVideo(heroVideo);
 
       const lazyVideos = document.querySelectorAll("video[data-lazy-video]");
       if (!("IntersectionObserver" in window)) {
