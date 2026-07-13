@@ -3341,7 +3341,7 @@
       <div class="hero-stage">
         <div class="hero-opening-shutter hero-opening-shutter--top" aria-hidden="true"></div>
         <div class="hero-opening-shutter hero-opening-shutter--bottom" aria-hidden="true"></div>
-        <video class="hero-video" autoplay muted playsinline loop preload="metadata" poster="assets/coinw-eye.webp">
+        <video class="hero-video" autoplay muted playsinline loop preload="metadata" poster="assets/coinw-eye.webp" data-video-src="assets/hero.mp4">
         </video>
         <canvas class="hero-particles" aria-hidden="true"></canvas>
         <div class="hero-video-overlay" aria-hidden="true"></div>
@@ -3368,7 +3368,7 @@
         <article class="overview-card border-glow-card">
           <span class="edge-light" aria-hidden="true"></span>
           <div class="overview-media">
-            <video class="overview-video" autoplay muted playsinline loop preload="metadata" poster="assets/avatar-mask-group.webp" data-lazy-video aria-label="人物形象动画视频">
+            <video class="overview-video" autoplay muted playsinline loop preload="metadata" poster="assets/avatar-mask-group.webp" data-video-src="assets/overview-video.mp4" data-lazy-video aria-label="人物形象动画视频">
             </video>
           </div>
 
@@ -3929,7 +3929,7 @@
       <article class="project-card timeline-entry reveal" style="--visual:${project.visual}; --reveal-delay:${index * 140}ms">
         <span class="project-date">${project.tag}</span>
         <div class="project-visual project-visual--image project-visual--poster" style="background:${project.visual}">
-          ${project.videoSrc ? `<video class="project-video" autoplay muted playsinline loop preload="metadata" poster="${project.imageSrc || "assets/coinw-eye.webp"}" data-lazy-video>
+          ${project.videoSrc ? `<video class="project-video" autoplay muted playsinline loop preload="metadata" poster="${project.imageSrc || "assets/coinw-eye.webp"}" data-video-src="${encodeURI(project.videoSrc)}" data-lazy-video>
           </video>` : ""}
           ${project.imageSrc ? `<img class="project-image" src="${project.imageSrc}" alt="" loading="lazy" decoding="async" />` : ""}
         </div>
@@ -4520,6 +4520,62 @@
 
       observer?.observe(container);
       window.addEventListener("resize", handleResize, { passive: true });
+    }
+
+    function restorePoster(video) {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    }
+
+    function loadAndPlayVideo(video) {
+      const source = video.dataset.videoSrc;
+      if (!source || video.src) return;
+
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      video.autoplay = false;
+      video.src = source;
+      video.load();
+
+      window.setTimeout(() => {
+        video.autoplay = true;
+        video.setAttribute("autoplay", "");
+        const playAttempt = video.play();
+        if (playAttempt && typeof playAttempt.catch === "function") {
+          playAttempt.catch(() => restorePoster(video));
+        }
+      }, 500);
+    }
+
+    function initializeHomepageVideos() {
+      const heroVideo = document.querySelector(".hero-video");
+      if (heroVideo) loadAndPlayVideo(heroVideo);
+
+      const lazyVideos = document.querySelectorAll("video[data-lazy-video]");
+      if (!("IntersectionObserver" in window)) {
+        lazyVideos.forEach(loadAndPlayVideo);
+        return;
+      }
+
+      const videoObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          loadAndPlayVideo(entry.target);
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.01 });
+
+      lazyVideos.forEach((video) => videoObserver.observe(video));
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initializeHomepageVideos, { once: true });
+    } else {
+      initializeHomepageVideos();
     }
 
     initParticles(document.querySelector(".hero-particles"));
