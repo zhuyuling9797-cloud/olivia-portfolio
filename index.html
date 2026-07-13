@@ -83,6 +83,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
+      -webkit-backdrop-filter: blur(20px);
       backdrop-filter: blur(20px);
       background: linear-gradient(180deg, rgba(5, 6, 7, 0.82), rgba(5, 6, 7, 0.55));
     }
@@ -216,6 +217,7 @@
       border-radius: 24px;
       border: 1px solid var(--line);
       background: rgba(9, 10, 12, 0.92);
+      -webkit-backdrop-filter: blur(22px);
       backdrop-filter: blur(22px);
       box-shadow: var(--shadow);
     }
@@ -2576,6 +2578,7 @@
       place-items: center;
       padding: 20px;
       background: rgba(2, 3, 4, 0.72);
+      -webkit-backdrop-filter: blur(22px);
       backdrop-filter: blur(22px);
     }
 
@@ -3338,7 +3341,7 @@
       <div class="hero-stage">
         <div class="hero-opening-shutter hero-opening-shutter--top" aria-hidden="true"></div>
         <div class="hero-opening-shutter hero-opening-shutter--bottom" aria-hidden="true"></div>
-        <video class="hero-video" autoplay muted loop playsinline preload="metadata">
+        <video class="hero-video" autoplay muted playsinline loop preload="metadata" poster="assets/coinw-eye.webp">
           <source src="assets/hero.mp4" type="video/mp4" />
         </video>
         <canvas class="hero-particles" aria-hidden="true"></canvas>
@@ -3366,8 +3369,8 @@
         <article class="overview-card border-glow-card">
           <span class="edge-light" aria-hidden="true"></span>
           <div class="overview-media">
-            <video class="overview-video" autoplay muted loop playsinline preload="metadata" aria-label="人物形象动画视频">
-              <source src="assets/overview-video.mp4" type="video/mp4" />
+            <video class="overview-video" autoplay muted playsinline loop preload="metadata" poster="assets/avatar-mask-group.webp" data-lazy-video aria-label="人物形象动画视频">
+              <source data-src="assets/overview-video.mp4" type="video/mp4" />
             </video>
           </div>
 
@@ -3928,8 +3931,8 @@
       <article class="project-card timeline-entry reveal" style="--visual:${project.visual}; --reveal-delay:${index * 140}ms">
         <span class="project-date">${project.tag}</span>
         <div class="project-visual project-visual--image project-visual--poster" style="background:${project.visual}">
-          ${project.videoSrc ? `<video class="project-video" autoplay muted loop playsinline preload="metadata">
-            <source src="${encodeURI(project.videoSrc)}" type="video/mp4" />
+          ${project.videoSrc ? `<video class="project-video" autoplay muted playsinline loop preload="metadata" poster="${project.imageSrc || "assets/coinw-eye.webp"}" data-lazy-video>
+            <source data-src="${encodeURI(project.videoSrc)}" type="video/mp4" />
           </video>` : ""}
           ${project.imageSrc ? `<img class="project-image" src="${project.imageSrc}" alt="" loading="lazy" decoding="async" />` : ""}
         </div>
@@ -4521,6 +4524,49 @@
       observer?.observe(container);
       window.addEventListener("resize", handleResize, { passive: true });
     }
+
+    function playVideoSafely(video) {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      const playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.catch === "function") {
+        playAttempt.catch(() => {
+          video.controls = true;
+        });
+      }
+    }
+
+    function loadVideo(video) {
+      video.querySelectorAll("source[data-src]").forEach((source) => {
+        source.src = source.dataset.src;
+        source.removeAttribute("data-src");
+      });
+      video.load();
+      playVideoSafely(video);
+    }
+
+    const lazyVideoObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver((entries, observer) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            loadVideo(entry.target);
+            observer.unobserve(entry.target);
+          });
+        }, { rootMargin: "0px", threshold: 0.01 })
+      : null;
+
+    document.querySelectorAll("video").forEach((video) => {
+      if (video.hasAttribute("data-lazy-video") && lazyVideoObserver) {
+        lazyVideoObserver.observe(video);
+      } else if (video.hasAttribute("data-lazy-video")) {
+        loadVideo(video);
+      } else {
+        playVideoSafely(video);
+      }
+    });
 
     initParticles(document.querySelector(".hero-particles"));
     initScrollParallax(".project-image, .project-video", 20);

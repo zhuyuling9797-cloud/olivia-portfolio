@@ -405,7 +405,7 @@
       <figure class="media-card ${media.hero ? "media-card--hero" : ""}">
         <div class="media-frame" style="--image-bg:${project.visual}">
           ${media.kind === "video"
-            ? `<video src="${media.src}" poster="${media.poster || ""}" muted loop playsinline autoplay controls></video>`
+            ? `<video poster="${media.poster || "assets/coinw-eye.webp"}" autoplay muted playsinline loop preload="metadata" data-lazy-video><source data-src="${media.src}" type="video/mp4"></video>`
             : `<img src="${media.src}" alt="${project.title} - ${media.title}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">`}
         </div>
       </figure>
@@ -416,6 +416,47 @@
         <span>${value}</span>
       </div>
     `).join("");
+
+    function playVideoSafely(video) {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      const playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.catch === "function") {
+        playAttempt.catch(() => {
+          video.controls = true;
+        });
+      }
+    }
+
+    function loadVideo(video) {
+      video.querySelectorAll("source[data-src]").forEach((source) => {
+        source.src = source.dataset.src;
+        source.removeAttribute("data-src");
+      });
+      video.load();
+      playVideoSafely(video);
+    }
+
+    const lazyVideoObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver((entries, observer) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            loadVideo(entry.target);
+            observer.unobserve(entry.target);
+          });
+        }, { rootMargin: "0px", threshold: 0.01 })
+      : null;
+
+    document.querySelectorAll("video[data-lazy-video]").forEach((video) => {
+      if (lazyVideoObserver) {
+        lazyVideoObserver.observe(video);
+      } else {
+        loadVideo(video);
+      }
+    });
   </script>
 </body>
 </html>
