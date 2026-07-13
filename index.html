@@ -4579,13 +4579,6 @@
       heroVideoInitialized = true;
 
       const stage = video.closest(".hero-stage");
-      const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      const lowPerformanceDevice =
-        (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
-        (navigator.deviceMemory && navigator.deviceMemory <= 4);
-
-      if (prefersReducedMotion || lowPerformanceDevice) return;
-
       const source = video.dataset.videoSrc;
       if (!source) return;
 
@@ -4595,32 +4588,65 @@
       video.setAttribute("playsinline", "");
       video.setAttribute("webkit-playsinline", "");
 
-      let playAttempted = false;
+      let autoplayAttempted = false;
+      let userRetryEnabled = false;
+
+      const showVideo = () => {
+        stage?.classList.add("is-video-ready");
+        if (userRetryEnabled) {
+          stage?.removeEventListener("click", playFromUserGesture);
+          userRetryEnabled = false;
+        }
+      };
+
       const keepPosterVisible = () => {
         stage?.classList.remove("is-video-ready");
         video.pause();
-        video.removeAttribute("src");
-        video.load();
       };
 
-      const playOnce = () => {
-        if (playAttempted) return;
-        playAttempted = true;
+      const enableUserRetry = () => {
+        if (!stage || userRetryEnabled) return;
+        userRetryEnabled = true;
+        stage.addEventListener("click", playFromUserGesture);
+      };
+
+      function playFromUserGesture() {
+        const playAttempt = video.play();
+        if (playAttempt && typeof playAttempt.then === "function") {
+          playAttempt.then(showVideo).catch(keepPosterVisible);
+        } else if (!video.paused) {
+          showVideo();
+        } else {
+          keepPosterVisible();
+        }
+      }
+
+      const attemptAutoplay = () => {
+        if (autoplayAttempted) return;
+        autoplayAttempted = true;
         const playAttempt = video.play();
 
         if (playAttempt && typeof playAttempt.then === "function") {
           playAttempt
-            .then(() => stage?.classList.add("is-video-ready"))
-            .catch(keepPosterVisible);
+            .then(showVideo)
+            .catch(() => {
+              keepPosterVisible();
+              enableUserRetry();
+            });
         } else if (!video.paused) {
-          stage?.classList.add("is-video-ready");
+          showVideo();
         } else {
           keepPosterVisible();
+          enableUserRetry();
         }
       };
 
-      video.addEventListener("canplay", playOnce, { once: true });
-      video.addEventListener("error", keepPosterVisible, { once: true });
+      video.addEventListener("canplay", attemptAutoplay, { once: true });
+      video.addEventListener("error", () => {
+        keepPosterVisible();
+        video.removeAttribute("src");
+        video.load();
+      }, { once: true });
       video.src = source;
       video.load();
     }
